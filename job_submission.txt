@@ -1,0 +1,61 @@
+ Job submission
+
+## Give execution permission to your job script
+
+```{bash}
+chmod +x scripts/train.sh
+```
+
+## Write submission script
+
+```{bash}
+cat > scheduler.pbs <<EOF
+#!/bin/bash
+#PBS -N pointcept_job_prueba
+#PBS -l select=1:ncpus=4:mem=64:ngpus=4:gpu_cap=cuda60:cuda_version=11.0:gpu_mem=24gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
+
+module add mamba
+module add cuda/11.0
+
+mamba activate pointcept
+
+cd /storage/brno2/home/molina_valero/Pointcept
+sh scripts/train.sh -g 4 -d SegmentedForests -c semseg-pt-v3m1-0-base -n semseg-pt-v3m1-0-base
+EOF
+
+chmod +x scheduler.pbs
+```
+
+## Submit job
+
+'qsub' is the function that will pick your PBS submission script and send it to the HPC scheduler system. The scheduler will then manage the execution of your job based on the resources you requested and the current load on the cluster. After you run this command, you should see a message confirming that your job has been submitted, along with a job ID that you can use to track its progress.
+
+```{bash}
+qsub scheduler.pbs
+```
+
+# Optional: check job status
+
+You can check the status of your submitted job using the `qstat` command followed by your username or job ID. This will show you whether your job is queued, running, or completed. For example:
+
+```{bash}
+qstat -u $USER
+```
+
+# Quit the SSH session
+
+After submitting your job, you can exit the SSH session on the login node. Your job will continue to run on the compute nodes even after you disconnect. You can reconnect later to check the status of your job or to retrieve the output files.
+
+```{bash}
+exit
+```
+
+# Copy output files back to local
+
+Once your job has completed, you can use `scp` to copy the output files from the HPC cluster back to your local machine. Remember to replace USERNAME with your actual username and skirit.metacentrum.cz with the appropriate login node for your cluster.
+
+```{bash}
+scp USERNAME@skirit.metacentrum.cz:/storage/brno2/home/USERNAME/HPC-VSCode-Mamba_SciSeminar/cropped.tif Data/
+```
