@@ -1,17 +1,14 @@
-#!/bin/bash
+bash#!/bin/bash
 #PBS -N SegmentedForests
 #PBS -l select=1:ncpus=4:mem=64gb:ngpus=4:gpu_mem=16gb
 #PBS -l walltime=4:00:00
 #PBS -j oe
 
-# Load conda/mamba
+# Load mambaforge (this sets up all the shell hooks)
 module add mambaforge
 
-# Initialize conda for non-interactive shells
-source $(conda info --base)/etc/profile.d/conda.sh
-
 # Activate your env by full path
-conda activate /storage/brno2/home/molina_valero/.conda/envs/pointcept
+mamba activate /storage/brno2/home/molina_valero/.conda/envs/pointcept
 
 # Go to your project directory
 cd /storage/brno2/home/molina_valero/Pointcept
