@@ -7,8 +7,11 @@
 # Load conda/mamba
 module add mambaforge
 
-# Activate environment correctly
-conda activate pointcept
+# Initialize conda shell
+source "$(conda info --base)/etc/profile.d/conda.sh"
+
+# Activate by full path (avoids ambiguity between .conda and mamba envs)
+conda activate /storage/brno2/home/molina_valero/.conda/envs/pointcept
 
 # Go to your project directory
 cd /storage/brno2/home/molina_valero/Pointcept
