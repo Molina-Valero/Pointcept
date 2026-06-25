@@ -8,7 +8,7 @@
 module add mambaforge
 
 # Activate environment correctly
-source activate pointcept
+conda activate pointcept
 
 # Go to your project directory
 cd /storage/brno2/home/molina_valero/Pointcept
