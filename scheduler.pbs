@@ -7,6 +7,9 @@
 # Load conda/mamba
 module add mambaforge
 
+# Initialize conda for non-interactive shells
+source $(conda info --base)/etc/profile.d/conda.sh
+
 # Activate your env by full path
 conda activate /storage/brno2/home/molina_valero/.conda/envs/pointcept
 
