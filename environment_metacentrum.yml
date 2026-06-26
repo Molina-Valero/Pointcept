@@ -33,7 +33,6 @@ dependencies:
   - matplotlib
   - black
   - open3d
-  - peft
   - pip:
     - torch-cluster -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
     - torch-scatter -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
