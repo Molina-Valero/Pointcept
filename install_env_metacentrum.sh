@@ -22,7 +22,7 @@ export PIP_CACHE_DIR=$SCRATCHDIR/pip_cache
 module add mambaforge
 
 # Create the environment on persistent storage
-mamba env create --prefix $ENV_PREFIX -f environment.yml
+mamba env create --prefix $ENV_PREFIX -f environment_metacentrum.yml
 
 echo "================================================"
 echo "Environment created at: $ENV_PREFIX"
