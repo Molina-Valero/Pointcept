@@ -8,7 +8,7 @@
 # EDIT THIS: change brno2 to your actual storage location
 # Check yours with: echo $HOME  after logging in
 # ============================================================
-STORAGE=/storage/brno2/home/$USER
+STORAGE=/storage/brno2/home/molina_valero
 ENV_PREFIX=$STORAGE/envs/pointcept-torch2.5.0-cu12.4
 WORKDIR=$PBS_O_WORKDIR
 
