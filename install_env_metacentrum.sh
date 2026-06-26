@@ -10,7 +10,7 @@
 # ============================================================
 STORAGE=/storage/brno2/home/molina_valero
 ENV_PREFIX=$STORAGE/envs/pointcept-torch2.5.0-cu12.4
-WORKDIR=$PBS_O_WORKDIR
+WORKDIR=/storage/brno2/home/molina_valero/Pointcept
 
 cd $WORKDIR || exit 1
 
