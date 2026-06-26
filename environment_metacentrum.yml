@@ -40,8 +40,9 @@ dependencies:
     - torch_geometric
     - spconv-cu124
     - peft
+    - transformers==4.50.3  # RECOMMENDATION: required for Sonata, Concerto, Utonia, and PEFT fine-tuning
     - git+https://github.com/octree-nn/ocnn-pytorch.git
     - git+https://github.com/openai/CLIP.git
-    - git+https://github.com/Dao-AILab/flash-attention.git
+    - git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4  # RECOMMENDATION: pin to a stable release instead of HEAD to avoid surprise build failures
     - ./libs/pointops
     - ./libs/pointgroup_ops
