@@ -1,4 +1,4 @@
-name: pointcept-torch2.7.0-cu12.6
+name: pointcept-torch2.5.0-cu12.4
 channels:
   - pyg
   - pytorch
@@ -9,10 +9,10 @@ channels:
 dependencies:
   - python=3.10
   - pip
-  - pytorch=2.7.0
-  - torchvision=0.22.0
-  - torchaudio=2.7.0
-  - pytorch-cuda=12.6
+  - pytorch=2.5.0
+  - torchvision=0.20.0
+  - torchaudio=2.5.0
+  - pytorch-cuda=12.4
   - ninja
   - google-sparsehash
   - h5py
@@ -34,15 +34,15 @@ dependencies:
   - black
   - open3d
   - pip:
-    - torch-cluster -f https://data.pyg.org/whl/torch-2.7.0+cu126.html
-    - torch-scatter -f https://data.pyg.org/whl/torch-2.7.0+cu126.html
-    - torch-sparse -f https://data.pyg.org/whl/torch-2.7.0+cu126.html
+    - torch-cluster -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
+    - torch-scatter -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
+    - torch-sparse -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
     - torch_geometric
-    - spconv-cu126
+    - spconv-cu124
     - peft
     - transformers==4.50.3
     - git+https://github.com/octree-nn/ocnn-pytorch.git
     - git+https://github.com/openai/CLIP.git
-    - flash-attn                # PyPI prebuilt — avoids long source compilation
-    # NOTE: pointops and pointgroup_ops are built separately after env creation
-    # using build_libs.sh to ensure correct CUDA toolkit is used
+    - git+https://github.com/Dao-AILab/flash-attention.git
+    - ./libs/pointops
+    - ./libs/pointgroup_ops
