@@ -14,9 +14,11 @@ module add mambaforge
 ENV_PREFIX=/storage/brno2/home/molina_valero/envs/pointcept-torch2.5.0-cu12.4
 source activate $ENV_PREFIX
 
-# Full path to the Python binary inside the env — avoids PATH resolution issues
-# when train.sh spawns a child shell via 'sh'
+# Full path to the Python binary inside the env
 PYTHON=$ENV_PREFIX/bin/python
+
+# Ensure env site-packages always wins, even after train.sh sets PYTHONPATH
+export PYTHONPATH=$ENV_PREFIX/lib/python3.10/site-packages:$PYTHONPATH
 
 # Redirect temp files to scratch to avoid quota issues
 export TMPDIR=$SCRATCHDIR
@@ -25,18 +27,17 @@ export PIP_CACHE_DIR=$SCRATCHDIR/pip_cache
 # Go to project directory
 cd /storage/brno2/home/molina_valero/Pointcept || exit 1
 
-# Quick sanity check before committing 4h of walltime
+# Quick sanity check
 echo "=== Environment check ==="
 echo "Node: $(hostname)"
 echo "GPUs: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader)"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 echo "Python: $PYTHON"
 $PYTHON -c "import torch; print('PyTorch:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('GPU count:', torch.cuda.device_count())"
-$PYTHON -c "from addict import Dict; print('addict OK')"
+$PYTHON -c "import addict, yapf, termcolor, tensorboard; print('core deps OK')"
 echo "========================="
 
-# Run training — use bash (not sh) so the child shell inherits the environment,
-# and pass -p to provide the explicit Python path
+# Run training
 bash scripts/train.sh -p $PYTHON -g 4 -d SegmentedForests -c semseg-pt-v3m1-0-base -n semseg-pt-v3m1-0-base
 
 # Clean scratch (required by MetaCentrum policy)
