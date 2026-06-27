@@ -1,17 +1,34 @@
-bash#!/bin/bash
+#!/bin/bash
 #PBS -N SegmentedForests
 #PBS -l select=1:ncpus=4:mem=64gb:ngpus=4:gpu_mem=16gb
 #PBS -l walltime=4:00:00
 #PBS -j oe
+#PBS -m ae
 
-# Load mambaforge (this sets up all the shell hooks)
+# Load CUDA 12.4 (required for CUDA extensions compiled during env creation)
+module add cuda/12.4
+# Load mambaforge
 module add mambaforge
 
-# Activate your env by full path
-mamba activate /storage/brno2/home/molina_valero/.conda/envs/pointcept
+# Activate env by full path (matches where it was installed)
+mamba activate /storage/brno2/home/molina_valero/envs/pointcept-torch2.5.0-cu12.4
 
-# Go to your project directory
-cd /storage/brno2/home/molina_valero/Pointcept
+# Redirect temp files to scratch to avoid quota issues
+export TMPDIR=$SCRATCHDIR
+export PIP_CACHE_DIR=$SCRATCHDIR/pip_cache
+
+# Go to project directory
+cd /storage/brno2/home/molina_valero/Pointcept || exit 1
+
+# Quick sanity check before committing 4h of walltime
+echo "=== Environment check ==="
+echo "Node: $(hostname)"
+echo "GPUs: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader)"
+python -c "import torch; print('PyTorch:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('GPU count:', torch.cuda.device_count())"
+echo "========================="
 
 # Run training
 sh scripts/train.sh -g 4 -d SegmentedForests -c semseg-pt-v3m1-0-base -n semseg-pt-v3m1-0-base
+
+# Clean scratch (required by MetaCentrum policy)
+clean_scratch
