@@ -11,7 +11,7 @@ module add cuda/12.4
 module add mambaforge
 
 # Activate env by full path (matches where it was installed)
-mamba activate /storage/brno2/home/molina_valero/envs/pointcept-torch2.5.0-cu12.4
+source activate /storage/brno2/home/molina_valero/envs/pointcept-torch2.5.0-cu12.4
 
 # Redirect temp files to scratch to avoid quota issues
 export TMPDIR=$SCRATCHDIR
