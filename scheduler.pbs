@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N SegmentedForests
-#PBS -l select=1:ncpus=4:mem=64gb:ngpus=4:gpu_mem=16gb
+#PBS -l select=1:ncpus=4:mem=64gb:ngpus=4:gpu_mem=16gb:gpu_cap=compute_80
 #PBS -l walltime=4:00:00
 #PBS -j oe
 #PBS -m ae
@@ -10,8 +10,13 @@ module add cuda/12.4
 # Load mambaforge
 module add mambaforge
 
-# Activate env by full path (matches where it was installed)
-source activate /storage/brno2/home/molina_valero/envs/pointcept-torch2.5.0-cu12.4
+# Activate env by full path
+ENV_PREFIX=/storage/brno2/home/molina_valero/envs/pointcept-torch2.5.0-cu12.4
+source activate $ENV_PREFIX
+
+# Full path to the Python binary inside the env — avoids PATH resolution issues
+# when train.sh spawns a child shell via 'sh'
+PYTHON=$ENV_PREFIX/bin/python
 
 # Redirect temp files to scratch to avoid quota issues
 export TMPDIR=$SCRATCHDIR
@@ -24,11 +29,15 @@ cd /storage/brno2/home/molina_valero/Pointcept || exit 1
 echo "=== Environment check ==="
 echo "Node: $(hostname)"
 echo "GPUs: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader)"
-python -c "import torch; print('PyTorch:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('GPU count:', torch.cuda.device_count())"
+echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
+echo "Python: $PYTHON"
+$PYTHON -c "import torch; print('PyTorch:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('GPU count:', torch.cuda.device_count())"
+$PYTHON -c "from addict import Dict; print('addict OK')"
 echo "========================="
 
-# Run training
-sh scripts/train.sh -g 4 -d SegmentedForests -c semseg-pt-v3m1-0-base -n semseg-pt-v3m1-0-base
+# Run training — use bash (not sh) so the child shell inherits the environment,
+# and pass -p to provide the explicit Python path
+bash scripts/train.sh -p $PYTHON -g 4 -d SegmentedForests -c semseg-pt-v3m1-0-base -n semseg-pt-v3m1-0-base
 
 # Clean scratch (required by MetaCentrum policy)
 clean_scratch
