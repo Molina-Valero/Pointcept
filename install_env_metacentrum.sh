@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N install_pointcept
-#PBS -l select=1:ncpus=4:mem=32gb:scratch_local=50gb:ngpus=1:gpu_cap=cuda80:cuda_version=12.4
+#PBS -l select=1:ncpus=4:mem=32gb:scratch_local=50gb:ngpus=1:gpu_cap=cuda80:cuda_version=13
 #PBS -l walltime=4:00:00
 #PBS -m ae
 
