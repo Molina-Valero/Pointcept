@@ -1,11 +1,11 @@
 #!/bin/bash
 #PBS -N install_pointcept
-#PBS -l select=1:ncpus=4:mem=32gb:scratch_local=50gb:ngpus=1:gpu_mem=16gb:gpu_cap=compute_80
-#PBS -l walltime=6:00:00
+#PBS -l select=1:ncpus=4:mem=32gb:scratch_local=50gb:ngpus=1
+#PBS -l walltime=4:00:00
 #PBS -m ae
 
 STORAGE=/storage/brno2/home/molina_valero
-ENV_PREFIX=$STORAGE/envs/pointcept-torch2.7.0-cu12.6
+ENV_PREFIX=$STORAGE/envs/pointcept-torch2.5.0-cu12.4
 WORKDIR=/storage/brno2/home/molina_valero/Pointcept
 
 cd $WORKDIR || exit 1
