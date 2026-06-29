@@ -42,14 +42,10 @@ dependencies:
   - pyg::pytorch-scatter
   - pyg::pytorch-sparse
   - pip:
-    - torch-cluster -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
-    - torch-scatter -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
-    - torch-sparse -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
     - torch-geometric
     - spconv-cu124
     - peft
     - transformers==4.50.3
-    - git+https://github.com/octree-nn/ocnn-pytorch.git
     - git+https://github.com/openai/CLIP.git
     - git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
       # Visualization (optional)
