@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N install_pointcept
 #PBS -l select=1:ncpus=4:mem=64gb:scratch_local=50gb:ngpus=1
-#PBS -l walltime=4:00:00
+#PBS -l walltime=6:00:00
 #PBS -m ae
 
 # ============================================================
