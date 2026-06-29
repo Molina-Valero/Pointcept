@@ -24,6 +24,18 @@ module add mambaforge
 # Create the environment on persistent storage
 mamba env create --prefix $ENV_PREFIX -f environment_metacentrum.yml
 
+# -------------------------------------------------------
+# Post-create: install local CUDA extension libs.
+# These must be built with --no-build-isolation because
+# they import torch/setuptools at build time and need the
+# already-installed torch + cuda-toolkit to compile against.
+# -------------------------------------------------------
+mamba run --prefix $ENV_PREFIX \
+    pip install --no-build-isolation ./libs/pointops
+
+mamba run --prefix $ENV_PREFIX \
+    pip install --no-build-isolation ./libs/pointgroup_ops
+
 echo "================================================"
 echo "Environment created at: $ENV_PREFIX"
 echo ""
