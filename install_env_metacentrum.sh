@@ -39,6 +39,12 @@ mamba run --prefix $ENV_PREFIX \
     pip install --no-build-isolation ./libs/pointops
 
 mamba run --prefix $ENV_PREFIX \
+    pip install --no-build-isolation ./libs/pointops2
+
+mamba run --prefix $ENV_PREFIX \
+    pip install --no-build-isolation ./libs/pointrope
+
+mamba run --prefix $ENV_PREFIX \
     pip install --no-build-isolation ./libs/pointgroup_ops
 
 echo "================================================"
