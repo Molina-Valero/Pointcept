@@ -45,14 +45,12 @@ dependencies:
   - pip:
     - torch-geometric
     - spconv-cu124
-    - peft
-    - transformers==4.50.3
+    - ftfy 
+    - regex 
+    - tqdm
     - git+https://github.com/openai/CLIP.git
-    # NOTE: flash-attention also needs --no-build-isolation (imports torch at build time).
-    # Install it in the post-create step in install_env_metacentrum.sh, same as pointops/pointgroup_ops:
-    #   pip install --no-build-isolation git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
-    # - git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
-      # Visualization (optional)
+    - transformers==4.50.3
+    - peft
     - open3d
 
 # NOTE: ./libs/pointops and ./libs/pointgroup_ops are intentionally omitted here.
