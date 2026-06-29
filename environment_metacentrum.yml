@@ -10,6 +10,7 @@ dependencies:
   - pip
   # CUDA + compilers (optional if CUDA already installed on system)
   - conda-forge::cuda-toolkit=12.4
+  - conda-forge::cuda-cccl=12.4  # provides <nv/target> header required by cuda_fp16.h
   - conda-forge::cudnn
   - conda-forge::gcc=13.2
   - conda-forge::gxx=13.2
@@ -47,7 +48,10 @@ dependencies:
     - peft
     - transformers==4.50.3
     - git+https://github.com/openai/CLIP.git
-    - git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
+    # NOTE: flash-attention also needs --no-build-isolation (imports torch at build time).
+    # Install it in the post-create step in install_env_metacentrum.sh, same as pointops/pointgroup_ops:
+    #   pip install --no-build-isolation git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
+    # - git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
       # Visualization (optional)
     - open3d
 

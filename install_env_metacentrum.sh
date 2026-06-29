@@ -25,11 +25,16 @@ module add mambaforge
 mamba env create --prefix $ENV_PREFIX -f environment_metacentrum.yml
 
 # -------------------------------------------------------
-# Post-create: install local CUDA extension libs.
-# These must be built with --no-build-isolation because
-# they import torch/setuptools at build time and need the
-# already-installed torch + cuda-toolkit to compile against.
+# Post-create: install packages that need --no-build-isolation
+# because they import torch/setuptools at build time and need
+# the already-installed torch + cuda-toolkit to compile against.
 # -------------------------------------------------------
+
+# flash-attention: imports torch at build time, same issue as pointops
+mamba run --prefix $ENV_PREFIX \
+    pip install --no-build-isolation \
+    git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
+
 mamba run --prefix $ENV_PREFIX \
     pip install --no-build-isolation ./libs/pointops
 
