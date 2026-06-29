@@ -1,51 +1,59 @@
-name: pointcept-torch2.5.0-cu12.4
+name: pointcept
 channels:
   - pyg
   - pytorch
-  - nvidia
   - conda-forge
+  - anaconda
   - defaults
 dependencies:
   - python=3.10
   - pip
-  - gcc=13.2
-  - gxx=13.2
-  - cuda-toolkit=12.4
-  - pytorch=2.5.0
-  - torchvision=0.20.0
-  - torchaudio=2.5.0
-  - pytorch-cuda=12.4
+  # CUDA + compilers (optional if CUDA already installed on system)
+  - conda-forge::cuda-toolkit=12.4
+  - conda-forge::cudnn
+  - conda-forge::gcc=13.2
+  - conda-forge::gxx=13.2
+  # Build tools
   - ninja
-  - google-sparsehash
-  - h5py
-  - pyyaml
-  - tensorboard
-  - tensorboardx
-  - wandb
-  - yapf
-  - addict
-  - einops
-  - scipy
-  - plyfile
-  - termcolor
-  - timm
-  - ftfy
-  - regex
-  - tqdm
-  - matplotlib
-  - black
-  - open3d
+  # PyTorch ecosystem
+  - pytorch::pytorch=2.5.0
+  - pytorch::torchvision=0.20.0
+  - pytorch::torchaudio=2.5.0
+  - pytorch::pytorch-cuda=12.4
+  # Data / config
+  - anaconda::h5py
+  - anaconda::pyyaml
+  # General ML / utilities
+  - conda-forge::sharedarray
+  - conda-forge::tensorboard
+  - conda-forge::tensorboardx
+  - conda-forge::wandb
+  - conda-forge::yapf
+  - conda-forge::addict
+  - conda-forge::einops
+  - conda-forge::scipy
+  - conda-forge::plyfile
+  - conda-forge::termcolor
+  - conda-forge::timm
+  # Visualization (optional)
+  - conda-forge::open3d
+  # PyG extensions
+  - pyg::pytorch-cluster
+  - pyg::pytorch-scatter
+  - pyg::pytorch-sparse
   - pip:
     - torch-cluster -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
     - torch-scatter -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
     - torch-sparse -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
-    - torch_geometric
+    - torch-geometric
     - spconv-cu124
     - peft
     - transformers==4.50.3
     - git+https://github.com/octree-nn/ocnn-pytorch.git
     - git+https://github.com/openai/CLIP.git
     - git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
+      # Visualization (optional)
+    - open3d
 
 # NOTE: ./libs/pointops and ./libs/pointgroup_ops are intentionally omitted here.
 # They require --no-build-isolation (they import torch at build time) and are
