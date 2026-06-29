@@ -11,7 +11,7 @@ module add cuda/12.4
 module add mambaforge
 
 # Activate env by full path
-ENV_PREFIX=/storage/brno2/home/molina_valero/envs/pointcept-torch2.5.0-cu12.4
+ENV_PREFIX=/storage/brno2/home/molina_valero/envs/pointcept
 source activate $ENV_PREFIX
 
 # Full path to the Python binary inside the env
