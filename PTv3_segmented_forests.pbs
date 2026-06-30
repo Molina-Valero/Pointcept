@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N SegmentedForests
 #PBS -l select=1:ncpus=16:mem=256gb:ngpus=4:gpu_mem=40gb:gpu_cap=compute_80
-#PBS -l walltime=24:00:00
+#PBS -l walltime=48:00:00
 #PBS -j oe
 #PBS -m ae
 
