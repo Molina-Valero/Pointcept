@@ -36,8 +36,6 @@ dependencies:
   - conda-forge::plyfile
   - conda-forge::termcolor
   - conda-forge::timm
-  # Visualization (optional)
-  - conda-forge::open3d
   # PyG extensions
   - pyg::pytorch-cluster
   - pyg::pytorch-scatter
