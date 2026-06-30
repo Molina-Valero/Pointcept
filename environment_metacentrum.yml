@@ -6,21 +6,21 @@ channels:
   - anaconda
   - defaults
 dependencies:
-  - python=3.10
+  - python=3.8
   - pip
   # CUDA + compilers (optional if CUDA already installed on system)
-  - conda-forge::cuda-toolkit=12.4
-  - conda-forge::cuda-cccl=12.4  # provides <nv/target> header required by cuda_fp16.h
+  - conda-forge::cuda-toolkit=11.8
+  - conda-forge::cuda-cccl=11.8  # provides <nv/target> header required by cuda_fp16.h
   - conda-forge::cudnn
   - conda-forge::gcc=13.2
   - conda-forge::gxx=13.2
   # Build tools
   - ninja
   # PyTorch ecosystem
-  - pytorch::pytorch=2.5.0
-  - pytorch::torchvision=0.20.0
-  - pytorch::torchaudio=2.5.0
-  - pytorch::pytorch-cuda=12.4
+  - pytorch::pytorch=2.1.0
+  - pytorch::torchvision=0.16.0
+  - pytorch::torchaudio=2.1.0
+  - pytorch::pytorch-cuda=11.8
   # Data / config
   - anaconda::h5py
   - anaconda::pyyaml
