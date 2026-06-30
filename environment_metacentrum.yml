@@ -10,7 +10,9 @@ dependencies:
   - pip
   # CUDA + compilers (optional if CUDA already installed on system)
   - conda-forge::cuda-toolkit=11.8
-  - conda-forge::cuda-cccl=11.8  # provides <nv/target> header required by cuda_fp16.h
+  - conda-forge::cuda-cccl=11.8
+  - conda-forge::cuda-cudart=11.8
+  - conda-forge::cuda-version=11.8
   - conda-forge::cudnn
   - conda-forge::gcc=13.2
   - conda-forge::gxx=13.2
@@ -20,7 +22,6 @@ dependencies:
   - pytorch::pytorch=2.1.0
   - pytorch::torchvision=0.16.0
   - pytorch::torchaudio=2.1.0
-  - pytorch::pytorch-cuda=11.8
   # Data / config
   - anaconda::h5py
   - anaconda::pyyaml
