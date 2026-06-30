@@ -1,7 +1,7 @@
 _base_ = ["../_base_/default_runtime.py"]
 
 # ── misc ─────────────────────────────────────────────────────────────────────
-batch_size = 8          # total across all GPUs; reduce if OOM
+batch_size = 2          # total across all GPUs; reduce if OOM
 num_worker = 8
 mix_prob   = 0.8        # MixUp3D probability
 empty_cache = False
