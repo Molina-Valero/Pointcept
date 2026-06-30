@@ -1,21 +1,30 @@
 name: pointcept
 channels:
-  - pyg
   - pytorch
+  - nvidia
+  - pyg
   - conda-forge
   - anaconda
   - defaults
 dependencies:
   - python=3.8
   - pip
-  # CUDA + compilers (optional if CUDA already installed on system)
-  - conda-forge::cuda-toolkit=11.8
+  # CUDA toolkit + compilers (optional if CUDA already installed on system)
+  # IMPORTANT: conda-forge does NOT publish cuda-toolkit below version 12.0
+  # (verified via `mamba search cuda-toolkit -c conda-forge` on this cluster -
+  # smallest available is 12.0.0). Do not change this back to
+  # conda-forge::cuda-toolkit=11.8 - it does not exist and will fail to solve.
+  # The nvidia channel has 11.8.0, which matches pytorch-cuda=11.8 below.
+  - nvidia::cuda-toolkit=11.8
   - conda-forge::cudnn
   - conda-forge::gcc=13.2
   - conda-forge::gxx=13.2
   # Build tools
   - ninja
   # PyTorch ecosystem
+  # pytorch-cuda=11.8 will pull in the matching cuda-cudart/cuda-cccl/etc.
+  # from the nvidia channel automatically - do not pin those separately
+  # from conda-forge, or the solver will hit a version/channel conflict.
   - pytorch::pytorch=2.1.0
   - pytorch::torchvision=0.16.0
   - pytorch::torchaudio=2.1.0
