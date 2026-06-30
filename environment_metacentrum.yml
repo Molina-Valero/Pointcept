@@ -19,9 +19,9 @@ dependencies:
   # Build tools
   - ninja
   # PyTorch ecosystem
-  - pytorch::pytorch=2.1.0
-  - pytorch::torchvision=0.16.0
-  - pytorch::torchaudio=2.1.0
+  - pytorch::pytorch=2.1.0=*cuda11.8*
+  - pytorch::torchvision=0.16.0=*cuda11.8*
+  - pytorch::torchaudio=2.1.0=*cuda11.8*
   # Data / config
   - anaconda::h5py
   - anaconda::pyyaml
@@ -38,9 +38,9 @@ dependencies:
   - conda-forge::termcolor
   - conda-forge::timm
   # PyG extensions
-  - pyg::pytorch-cluster
-  - pyg::pytorch-scatter
-  - pyg::pytorch-sparse
+  - pyg::pytorch-cluster=*=*cu118*
+  - pyg::pytorch-scatter=*=*cu118*
+  - pyg::pytorch-sparse=*=*cu118*
   - pip:
     - torch-geometric
     - spconv-cu118
