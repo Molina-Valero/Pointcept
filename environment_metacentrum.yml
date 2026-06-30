@@ -18,9 +18,10 @@ dependencies:
   - nvidia::cuda-toolkit=11.8
   - nvidia::cuda-nvcc=11.8
   - nvidia::cuda-compiler=11.8
+  - nvidia::cuda-cccl=11.8
   - conda-forge::cudnn
-  - conda-forge::gcc=13.2
-  - conda-forge::gxx=13.2
+  - conda-forge::gcc=11
+  - conda-forge::gxx=11
   # Build tools
   - ninja
   # PyTorch ecosystem
