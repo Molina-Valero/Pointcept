@@ -44,7 +44,7 @@ dependencies:
   - pyg::pytorch-sparse
   - pip:
     - torch-geometric
-    - spconv-cu124
+    - spconv-cu118
     - ftfy 
     - regex 
     - tqdm
