@@ -10,9 +10,6 @@ dependencies:
   - pip
   # CUDA + compilers (optional if CUDA already installed on system)
   - conda-forge::cuda-toolkit=11.8
-  - conda-forge::cuda-cccl=11.8
-  - conda-forge::cuda-cudart=11.8
-  - conda-forge::cuda-version=11.8
   - conda-forge::cudnn
   - conda-forge::gcc=13.2
   - conda-forge::gxx=13.2
