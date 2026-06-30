@@ -23,13 +23,6 @@ export TMPDIR=$SCRATCHDIR
 export PIP_CACHE_DIR=$SCRATCHDIR/pip_cache
 mkdir -p "$PIP_CACHE_DIR"
 
-# Redirect conda's package cache to scratch as well. The default shared
-# mambaforge install on AFS (/afs/ics.muni.cz/software/mambaforge/...)
-# has a read-only pkgs cache for normal users, so mamba can't write its
-# lockfile there ("Could not open lockfile .../pkgs/cache/cache.lock").
-export CONDA_PKGS_DIRS=$SCRATCHDIR/conda_pkgs
-mkdir -p "$CONDA_PKGS_DIRS"
-
 # Cap parallel CUDA compile jobs. flash-attn (and other CUDA extension
 # builds) can spawn one nvcc process per core, each using several GB of
 # RAM; with 4 cores unrestricted this can exceed the requested memory.
