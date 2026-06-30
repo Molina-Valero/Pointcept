@@ -63,3 +63,6 @@ echo "To activate in future jobs, add these lines:"
 echo "  module add mambaforge"
 echo "  mamba activate $ENV_PREFIX"
 echo "================================================"
+
+# Clean scratch (required by MetaCentrum policy)
+clean_scratch
