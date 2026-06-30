@@ -32,8 +32,7 @@ mamba env create --prefix $ENV_PREFIX -f environment_metacentrum.yml --force
 
 # flash-attention: imports torch at build time, same issue as pointops
 mamba run --prefix $ENV_PREFIX \
-    pip install --no-build-isolation \
-    git+https://github.com/Dao-AILab/flash-attention.git@v2.7.4
+    pip install flash-attn --no-build-isolation
 
 mamba run --prefix $ENV_PREFIX \
     pip install --no-build-isolation ./libs/pointops
