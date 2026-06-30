@@ -47,7 +47,6 @@ dependencies:
     - regex 
     - tqdm
     - git+https://github.com/openai/CLIP.git
-    - transformers==4.50.3
     - peft
     - open3d
 
