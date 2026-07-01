@@ -185,7 +185,8 @@ data = dict(
                 mode="test",
                 return_grid_coord=True,
             ),
-            crop=None,
+            # crop=None,
+            crop=dict(type="SphereCrop", point_max=200000, mode="all"),
             post_transform=[
                 dict(type="CenterShift", apply_z=False),
                 dict(type="ToTensor"),
