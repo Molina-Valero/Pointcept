@@ -4,7 +4,7 @@ _base_ = ["../_base_/default_runtime.py"]
 batch_size = 4          # total across all GPUs; reduce if OOM
 num_worker = 4
 mix_prob   = 0.8        # MixUp3D probability
-empty_cache = False
+empty_cache = True
 enable_amp  = True
 
 # ── model ────────────────────────────────────────────────────────────────────
@@ -155,6 +155,11 @@ data = dict(
                 return_grid_coord=True,
                 return_inverse=True,
             ),
+            # Safety net: train caps every sample at 120k points via SphereCrop,
+            # val has no cap and pushes the *whole* scene through in one forward
+            # pass. This only fires on scenes bigger than point_max, so it won't
+            # touch normal-sized val scenes and won't affect mIoU for those.
+            dict(type="SphereCrop", point_max=400000, mode="center"),
             dict(type="CenterShift", apply_z=False),
             dict(type="ToTensor"),
             dict(
