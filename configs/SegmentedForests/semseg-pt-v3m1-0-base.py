@@ -4,7 +4,7 @@ _base_ = ["../_base_/default_runtime.py"]
 batch_size = 4          # total across all GPUs; reduce if OOM
 num_worker = 4
 mix_prob   = 0.8        # MixUp3D probability
-empty_cache = False
+empty_cache = True
 enable_amp  = True
 
 # ── model ────────────────────────────────────────────────────────────────────
@@ -185,7 +185,6 @@ data = dict(
                 mode="test",
                 return_grid_coord=True,
             ),
-            dict(type="SphereCrop", point_max=400000, mode="center"),
             crop=None,
             post_transform=[
                 dict(type="CenterShift", apply_z=False),
