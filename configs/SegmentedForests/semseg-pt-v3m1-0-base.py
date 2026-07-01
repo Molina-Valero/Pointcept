@@ -4,7 +4,7 @@ _base_ = ["../_base_/default_runtime.py"]
 batch_size = 4          # total across all GPUs; reduce if OOM
 num_worker = 4
 mix_prob   = 0.8        # MixUp3D probability
-empty_cache = True
+empty_cache = False
 enable_amp  = True
 
 # ── model ────────────────────────────────────────────────────────────────────
