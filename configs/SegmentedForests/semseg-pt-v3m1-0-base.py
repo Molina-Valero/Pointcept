@@ -56,7 +56,7 @@ model = dict(
 # 500 epochs is a reasonable starting point for a small-to-medium forest dataset.
 # Increase to 800-1000 if you have few plots (< 20 training scenes).
 epoch      = 100
-eval_epoch = 10         # evaluate val every N epochs
+eval_epoch = 1         # evaluate val every N epochs
 
 optimizer = dict(type="AdamW", lr=0.006, weight_decay=0.05)
 scheduler = dict(
