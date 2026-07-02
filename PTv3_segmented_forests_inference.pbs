@@ -1,0 +1,177 @@
+#!/bin/bash
+#PBS -N SegmentedForestsInference
+#PBS -l select=1:ncpus=8:mem=128gb:ngpus=1:gpu_mem=40gb:gpu_cap=compute_80
+#PBS -l walltime=4:00:00
+#PBS -j oe
+#PBS -m ae
+
+# Load CUDA 11.8 (required for CUDA extensions compiled during env creation)
+module add cuda/11.8
+# Load mambaforge
+module add mambaforge
+
+# Activate env by full path
+ENV_PREFIX=/storage/brno2/home/molina_valero/envs/pointcept
+source activate $ENV_PREFIX
+
+# Full path to the Python binary inside the env
+PYTHON=$ENV_PREFIX/bin/python
+
+# Project paths
+PROJECT_DIR=/storage/brno2/home/molina_valero/Pointcept
+EXP_DIR=$PROJECT_DIR/exp/SegmentedForests/semseg-pt-v3m1-0-base
+WEIGHT=$EXP_DIR/model/model_best.pth
+TEST_DIR=$PROJECT_DIR/data/SegmentedForests/test
+INFER_DIR=$PROJECT_DIR/data/SegmentedForests/inference
+
+# Ensure env site-packages always wins, and make the repo importable
+# (tools/test.py needs the repo root on PYTHONPATH when called directly)
+export PYTHONPATH=$ENV_PREFIX/lib/python3.8/site-packages:$PROJECT_DIR:$PYTHONPATH
+
+# Redirect temp files to scratch to avoid quota issues
+export TMPDIR=$SCRATCHDIR
+export PIP_CACHE_DIR=$SCRATCHDIR/pip_cache
+
+# Disable wandb (no internet/TTY auth on compute nodes)
+export WANDB_MODE=disabled
+
+# Go to project directory
+cd $PROJECT_DIR || exit 1
+
+mkdir -p $INFER_DIR
+
+# Quick sanity check
+echo "=== Environment check ==="
+echo "Node: $(hostname)"
+echo "GPUs: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader)"
+echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
+echo "Python: $PYTHON"
+$PYTHON -c "import torch; print('PyTorch:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('GPU count:', torch.cuda.device_count())"
+echo "Weights: $WEIGHT"
+ls -lh $WEIGHT || { echo "ERROR: model_best.pth not found"; exit 1; }
+echo "Test scenes:"
+ls $TEST_DIR
+echo "========================="
+
+# -------------------------------------------------------------------
+# 1) Run inference with the official tester (SemSegTester)
+#    - Uses the config saved during training so all settings match
+#    - Per-point predicted labels are written to $INFER_DIR/result/<plot>_pred.npy
+#    - The mIoU/acc printed in the log is meaningless if segment.npy is dummy
+# -------------------------------------------------------------------
+$PYTHON tools/test.py \
+  --config-file $EXP_DIR/config.py \
+  --num-gpus 1 \
+  --options save_path=$INFER_DIR \
+            weight=$WEIGHT \
+            data.test.split=test \
+            data.test.data_root=$PROJECT_DIR/data/SegmentedForests \
+  || exit 1
+
+# -------------------------------------------------------------------
+# 2) Convert predictions to .ply (coord + class color + label field)
+#    Pure numpy, no extra dependencies. One PLY per plot.
+# -------------------------------------------------------------------
+$PYTHON - "$TEST_DIR" "$INFER_DIR" << 'EOF'
+import os
+import sys
+import glob
+import numpy as np
+
+test_dir, infer_dir = sys.argv[1], sys.argv[2]
+result_dir = os.path.join(infer_dir, "result")
+
+# Fixed color palette (RGB 0-255), extended procedurally if more classes exist
+BASE_PALETTE = np.array([
+    [ 78, 121, 167],  # 0
+    [242, 142,  43],  # 1
+    [ 89, 161,  79],  # 2
+    [225,  87,  89],  # 3
+    [176, 122, 161],  # 4
+    [255, 157, 167],  # 5
+    [118, 183, 178],  # 6
+    [237, 201,  72],  # 7
+    [186, 176, 172],  # 8
+    [156, 117,  95],  # 9
+], dtype=np.uint8)
+
+def palette(n):
+    if n <= len(BASE_PALETTE):
+        return BASE_PALETTE[:n]
+    rng = np.random.RandomState(42)
+    extra = rng.randint(0, 255, size=(n - len(BASE_PALETTE), 3), dtype=np.uint8)
+    return np.vstack([BASE_PALETTE, extra])
+
+def write_ply(path, coord, rgb, label):
+    n = coord.shape[0]
+    header = (
+        "ply\n"
+        "format binary_little_endian 1.0\n"
+        f"element vertex {n}\n"
+        "property float x\nproperty float y\nproperty float z\n"
+        "property uchar red\nproperty uchar green\nproperty uchar blue\n"
+        "property int label\n"
+        "end_header\n"
+    )
+    dtype = np.dtype([
+        ("x", "<f4"), ("y", "<f4"), ("z", "<f4"),
+        ("red", "u1"), ("green", "u1"), ("blue", "u1"),
+        ("label", "<i4"),
+    ])
+    data = np.empty(n, dtype=dtype)
+    data["x"], data["y"], data["z"] = coord[:, 0], coord[:, 1], coord[:, 2]
+    data["red"], data["green"], data["blue"] = rgb[:, 0], rgb[:, 1], rgb[:, 2]
+    data["label"] = label
+    with open(path, "wb") as f:
+        f.write(header.encode("ascii"))
+        data.tofile(f)
+    print(f"  wrote {path} ({n} points)")
+
+plots = sorted(d for d in os.listdir(test_dir)
+               if os.path.isdir(os.path.join(test_dir, d)))
+print(f"Converting predictions to PLY for: {plots}")
+
+for plot in plots:
+    coord = np.load(os.path.join(test_dir, plot, "coord.npy")).astype(np.float32)
+
+    # Find the prediction file saved by SemSegTester
+    candidates = (
+        glob.glob(os.path.join(result_dir, f"{plot}_pred.npy"))
+        + glob.glob(os.path.join(result_dir, f"{plot}.npy"))
+        + glob.glob(os.path.join(result_dir, f"*{plot}*pred*.npy"))
+    )
+    if not candidates:
+        print(f"  WARNING: no prediction found for {plot} in {result_dir}, skipping")
+        continue
+    pred = np.load(candidates[0]).astype(np.int32).reshape(-1)
+
+    if pred.shape[0] != coord.shape[0]:
+        print(f"  WARNING: {plot}: {pred.shape[0]} predictions vs "
+              f"{coord.shape[0]} points — check preprocessing")
+        m = min(pred.shape[0], coord.shape[0])
+        coord, pred = coord[:m], pred[:m]
+
+    pal = palette(int(pred.max()) + 1)
+    rgb = pal[pred]
+
+    # PLY colored by predicted class
+    write_ply(os.path.join(infer_dir, f"{plot}_pred.ply"), coord, rgb, pred)
+
+    # Optional: PLY with original colors + label field, if color.npy exists
+    color_path = os.path.join(test_dir, plot, "color.npy")
+    if os.path.isfile(color_path):
+        orig = np.load(color_path)
+        if orig.max() <= 1.0:
+            orig = orig * 255.0
+        orig = np.clip(orig, 0, 255).astype(np.uint8)[: coord.shape[0]]
+        write_ply(os.path.join(infer_dir, f"{plot}_rgb_label.ply"),
+                  coord, orig, pred)
+
+print("Done.")
+EOF
+
+echo "=== Inference finished. Outputs in $INFER_DIR ==="
+ls -lh $INFER_DIR
+
+# Clean scratch (required by MetaCentrum policy)
+clean_scratch
