@@ -1,13 +1,13 @@
 _base_ = ["../_base_/default_runtime.py"]
 
-# ── misc ─────────────────────────────────────────────────────────────────────
-batch_size = 4          # total across all GPUs; reduce if OOM
+# misc custom setting
+batch_size = 12        # total bs across all GPUs
 num_worker = 4
-mix_prob   = 0.8        # MixUp3D probability
+mix_prob   = 0.8        
 empty_cache = False
 enable_amp  = True
 
-# ── model ────────────────────────────────────────────────────────────────────
+# model settings
 model = dict(
     type="DefaultSegmentorV2",
     num_classes=5,
@@ -52,11 +52,9 @@ model = dict(
     ],
 )
 
-# ── scheduler ────────────────────────────────────────────────────────────────
-# 500 epochs is a reasonable starting point for a small-to-medium forest dataset.
-# Increase to 800-1000 if you have few plots (< 20 training scenes).
+# scheduler settings
 epoch      = 100
-eval_epoch = 100         # evaluate val every N epochs
+eval_epoch = 100         # evaluate val PRECISELY every N epochs
 
 optimizer = dict(type="AdamW", lr=0.006, weight_decay=0.05)
 scheduler = dict(
@@ -69,9 +67,9 @@ scheduler = dict(
 )
 param_dicts = [dict(keyword="block", lr=0.0006)]
 
-# ── dataset ──────────────────────────────────────────────────────────────────
+# dataset settings
 dataset_type = "SegmentedForestsDataset"
-data_root    = "data/SegmentedForests"    # symlink: ln -s /your/processed/path data/SegmentedForests
+data_root    = "data/SegmentedForests"
 ignore_index = -1
 
 names = [
@@ -87,7 +85,7 @@ data = dict(
     ignore_index=ignore_index,
     names=["shrub", "ground", "crown", "stem", "dead_downwood"],
 
-    # ── train ────────────────────────────────────────────────────────────────
+    # training
     train=dict(
         type=dataset_type,
         split="train",
@@ -139,7 +137,7 @@ data = dict(
         ignore_index=ignore_index,
     ),
 
-    # ── val ──────────────────────────────────────────────────────────────────
+    # validation
     val=dict(
         type=dataset_type,
         split="val",
@@ -167,10 +165,10 @@ data = dict(
         ignore_index=ignore_index,
     ),
 
-    # ── test ─────────────────────────────────────────────────────────────────
+    # val PRECISELY
     test=dict(
         type=dataset_type,
-        split="test",
+        split="val",
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
