@@ -54,7 +54,7 @@ model = dict(
 
 # scheduler settings
 epoch      = 100
-eval_epoch = 100         # evaluate val PRECISELY every N epochs
+eval_epoch = 10         # evaluate val PRECISELY every N epochs
 
 optimizer = dict(type="AdamW", lr=0.006, weight_decay=0.05)
 scheduler = dict(
