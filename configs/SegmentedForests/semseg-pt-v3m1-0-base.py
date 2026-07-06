@@ -89,7 +89,7 @@ data = dict(
     train=dict(
         type=dataset_type,
         # split="train",
-        split=("plot_02", "plot_03", "plot_04", "plot_05", "plot_06", "plot_07),
+        split=("plot_02", "plot_03", "plot_04", "plot_05", "plot_06", "plot_07"),
         data_root=data_root,
         transform=[
             # Centre each scene vertically
