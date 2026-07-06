@@ -1,34 +1,43 @@
 """
 Preprocessing script for forest point cloud dataset.
 Input:  per-plot .txt files with columns [X, Y, Z, label]
-Output: per-plot folders with keys: coord, normal, segment
+Output: per-plot .npy files with keys: coord, normal, segment
 
-Directory structure expected (flat — no train/val/test split):
+Directory structure expected:
     dataset_root/
-        plot_01.txt
-        plot_02.txt
-        ...
+        raw/
+            train/
+                plot_01.txt
+                plot_02.txt
+                ...
+            val/
+                plot_xx.txt
+                ...
+            test/
+                plot_xx.txt
+                ...
 
 Output structure:
     output_root/
-        plot_01/
-            coord.npy       # (N, 3) float32  - XYZ
-            normal.npy      # (N, 3) float32  - estimated normals
-            segment.npy     # (N,)   int16    - class labels 0..4
-        plot_02/
+        train/
+            plot_01/
+                coord.npy       # (N, 3) float32  - XYZ
+                normal.npy      # (N, 3) float32  - estimated normals
+                segment.npy     # (N,)   int16    - class labels 0..4
+        val/
             ...
-
-The train/val split is handled downstream by the plot-name tuples in the
-Pointcept config, not by folders here.
+        test/
+            ...
 
 Usage:
     python preprocess_SegmentedForests.py \
-        --dataset_root /path/to/raw_txt \
+        --dataset_root /path/to/raw \
         --output_root  /path/to/processed \
         --num_workers  8
 """
 
 import argparse
+import os
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
@@ -84,10 +93,11 @@ def load_txt(path: Path) -> tuple[np.ndarray, np.ndarray]:
 
 def process_scene(txt_path: Path,
                   output_root: Path,
+                  split: str,
                   normal_radius: float,
                   normal_max_nn: int) -> str:
     scene_name = txt_path.stem          # e.g. "plot_01"
-    out_dir    = output_root / scene_name
+    out_dir    = output_root / split / scene_name
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ── skip if already done ─────────────────────────────────────────────────
@@ -120,9 +130,11 @@ def main():
         description="Preprocess forest point clouds for Pointcept / PTv3"
     )
     parser.add_argument("--dataset_root", required=True,
-                        help="Folder containing the .txt plot files (flat, no split subdirs)")
+                        help="Root folder containing train/ val/ test/ subdirs of .txt files")
     parser.add_argument("--output_root",  required=True,
-                        help="Where to write processed per-plot folders")
+                        help="Where to write processed data")
+    parser.add_argument("--splits", nargs="+", default=["train", "val", "test"],
+                        help="Which splits to process")
     parser.add_argument("--normal_radius", type=float, default=0.3,
                         help="KD-tree search radius for normal estimation (metres)")
     parser.add_argument("--normal_max_nn", type=int,   default=30,
@@ -135,27 +147,34 @@ def main():
     output_root  = Path(args.output_root)
     output_root.mkdir(parents=True, exist_ok=True)
 
-    txt_files = sorted(dataset_root.glob("*.txt"))
-    if not txt_files:
-        print(f"[warn] no .txt files found in {dataset_root}")
-        return
+    for split in args.splits:
+        split_dir = dataset_root / split
+        if not split_dir.exists():
+            print(f"[warn] split dir not found: {split_dir}, skipping")
+            continue
 
-    print(f"\n── {len(txt_files)} scenes found in {dataset_root} ──")
+        txt_files = sorted(split_dir.glob("*.txt"))
+        if not txt_files:
+            print(f"[warn] no .txt files found in {split_dir}")
+            continue
 
-    worker = partial(
-        process_scene,
-        output_root   = output_root,
-        normal_radius = args.normal_radius,
-        normal_max_nn = args.normal_max_nn,
-    )
+        print(f"\n── {split}: {len(txt_files)} scenes ──")
 
-    if args.num_workers == 1:
-        for f in txt_files:
-            print(worker(f))
-    else:
-        with ProcessPoolExecutor(max_workers=args.num_workers) as pool:
-            for msg in pool.map(worker, txt_files):
-                print(msg)
+        worker = partial(
+            process_scene,
+            output_root   = output_root,
+            split         = split,
+            normal_radius = args.normal_radius,
+            normal_max_nn = args.normal_max_nn,
+        )
+
+        if args.num_workers == 1:
+            for f in txt_files:
+                print(worker(f))
+        else:
+            with ProcessPoolExecutor(max_workers=args.num_workers) as pool:
+                for msg in pool.map(worker, txt_files):
+                    print(msg)
 
     print("\nDone.")
 
