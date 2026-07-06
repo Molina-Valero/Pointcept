@@ -88,7 +88,8 @@ data = dict(
     # training
     train=dict(
         type=dataset_type,
-        split="train",
+        # split="train",
+        split=("plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09", "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15"),
         data_root=data_root,
         transform=[
             # Centre each scene vertically
@@ -140,7 +141,8 @@ data = dict(
     # validation
     val=dict(
         type=dataset_type,
-        split="val",
+        # split="val",
+        split=("plot_01", "plot_03", "plot_07"),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
@@ -168,7 +170,8 @@ data = dict(
     # val PRECISELY
     test=dict(
         type=dataset_type,
-        split="test",
+        # split="test",
+        split=("plot_01", "plot_03", "plot_07"),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
