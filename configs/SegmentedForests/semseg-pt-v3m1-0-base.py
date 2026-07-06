@@ -53,8 +53,8 @@ model = dict(
 )
 
 # scheduler settings
-epoch      = 200
-eval_epoch = 200         # evaluate val PRECISELY every N epochs
+epoch      = 25
+# eval_epoch = 200         # evaluate val PRECISELY every N epochs
 
 optimizer = dict(type="AdamW", lr=0.006, weight_decay=0.05)
 scheduler = dict(
@@ -168,7 +168,7 @@ data = dict(
     # val PRECISELY
     test=dict(
         type=dataset_type,
-        split="val",
+        split="test",
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
