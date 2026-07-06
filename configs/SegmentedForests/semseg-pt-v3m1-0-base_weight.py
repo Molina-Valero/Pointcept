@@ -1,16 +1,84 @@
 _base_ = ["../_base_/default_runtime.py"]
 
-# ── misc ─────────────────────────────────────────────────────────────────────
-batch_size = 1          # total across all GPUs; reduce if OOM
-num_worker = 1
-mix_prob   = 0.8        # MixUp3D probability
+import os
+import glob
+import numpy as np
+
+# misc custom setting
+batch_size = 12        # total bs across all GPUs
+num_worker = 24
+mix_prob   = 0.8
 empty_cache = False
 enable_amp  = True
 
-# ── model ────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# shared constants (single source of truth for the rest of the file)
+# ---------------------------------------------------------------------------
+dataset_type = "SegmentedForestsDataset"
+data_root    = "data/SegmentedForests"
+num_classes  = 5
+ignore_index = -1
+names = ["shrub", "ground", "crown", "stem", "dead_downwood"]
+
+train_split = (
+    "plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09",
+    "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15",
+)
+val_split = ("plot_01", "plot_03", "plot_07")
+
+# ---------------------------------------------------------------------------
+# class weights from the TRAIN split.
+# Computed once and cached to disk; recomputed only if the cache is missing.
+# Falls back to uniform weights when the data isn't present (e.g. inference
+# on a machine without the dataset mounted) so the config never crashes.
+#   scheme: "sqrt_inv" (gentle, recommended) | "inv" | "enet"
+# ---------------------------------------------------------------------------
+def _compute_class_weights(scheme="sqrt_inv", cache=True):
+    cache_path = os.path.join(data_root, f"class_weights_{scheme}.npy")
+    if cache and os.path.isfile(cache_path):
+        return np.load(cache_path).astype(np.float32).tolist()
+
+    counts = np.zeros(num_classes, dtype=np.int64)
+    for plot in train_split:
+        files = []
+        # adjust these globs if your on-disk layout differs
+        for pat in (
+            os.path.join(data_root, plot, "segment.npy"),
+            os.path.join(data_root, plot, "**", "segment.npy"),
+            os.path.join(data_root, "**", plot, "**", "segment.npy"),
+        ):
+            files.extend(glob.glob(pat, recursive=True))
+        for f in sorted(set(files)):
+            seg = np.load(f).reshape(-1).astype(np.int64)
+            seg = seg[(seg >= 0) & (seg < num_classes)]  # drop ignore/stray labels
+            counts += np.bincount(seg, minlength=num_classes)[:num_classes]
+
+    if counts.sum() == 0:
+        # data not found -> don't crash test/inference launches
+        return [1.0] * num_classes
+
+    freq = counts / counts.sum()
+    if scheme == "inv":
+        w = 1.0 / (freq + 1e-8)
+    elif scheme == "sqrt_inv":
+        w = 1.0 / np.sqrt(freq + 1e-8)
+    elif scheme == "enet":
+        w = 1.0 / np.log(1.02 + freq)
+    else:
+        raise ValueError(f"unknown scheme: {scheme}")
+    w = (w / w.mean()).astype(np.float32)  # normalise to mean 1
+
+    if cache:
+        np.save(cache_path, w)
+    return w.tolist()
+
+
+class_weight = _compute_class_weights(scheme="sqrt_inv")
+
+# model settings
 model = dict(
     type="DefaultSegmentorV2",
-    num_classes=5,
+    num_classes=num_classes,
     backbone_out_channels=64,
     backbone=dict(
         type="PT-v3m1",
@@ -47,16 +115,19 @@ model = dict(
         pdnorm_conditions=("Forest",),
     ),
     criteria=[
-        dict(type="CrossEntropyLoss", loss_weight=1.0, ignore_index=-1),
-        dict(type="LovaszLoss", mode="multiclass", loss_weight=1.0, ignore_index=-1),
+        dict(
+            type="CrossEntropyLoss",
+            weight=class_weight,      # per-class weights (order matches `names`)
+            loss_weight=1.0,
+            ignore_index=ignore_index,
+        ),
+        dict(type="LovaszLoss", mode="multiclass", loss_weight=1.0, ignore_index=ignore_index),
     ],
 )
 
-# ── scheduler ────────────────────────────────────────────────────────────────
-# 500 epochs is a reasonable starting point for a small-to-medium forest dataset.
-# Increase to 800-1000 if you have few plots (< 20 training scenes).
-epoch      = 500
-eval_epoch = 25         # evaluate val every N epochs
+# scheduler settings
+epoch      = 25
+# eval_epoch = 200         # evaluate val PRECISELY every N epochs
 
 optimizer = dict(type="AdamW", lr=0.006, weight_decay=0.05)
 scheduler = dict(
@@ -69,33 +140,16 @@ scheduler = dict(
 )
 param_dicts = [dict(keyword="block", lr=0.0006)]
 
-# ── checkpointing ─────────────────────────────────────────────────────────────
-hooks = [
-    dict(type="CheckpointSaver", save_freq=1),
-]
-
-# ── dataset ──────────────────────────────────────────────────────────────────
-dataset_type = "SegmentedForestsDataset"
-data_root    = "data/SegmentedForests"    # symlink: ln -s /your/processed/path data/SegmentedForests
-ignore_index = -1
-
-names = [
-    "shrub",
-    "ground",
-    "crown",
-    "stem",
-    "dead_downwood",
-]
-
+# dataset settings
 data = dict(
-    num_classes=5,
+    num_classes=num_classes,
     ignore_index=ignore_index,
-    names=["shrub", "ground", "crown", "stem", "dead_downwood"],
+    names=names,
 
-    # ── train ────────────────────────────────────────────────────────────────
+    # training
     train=dict(
         type=dataset_type,
-        split="train",
+        split=train_split,
         data_root=data_root,
         transform=[
             # Centre each scene vertically
@@ -144,10 +198,10 @@ data = dict(
         ignore_index=ignore_index,
     ),
 
-    # ── val ──────────────────────────────────────────────────────────────────
+    # validation
     val=dict(
         type=dataset_type,
-        split="val",
+        split=val_split,
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
@@ -172,10 +226,10 @@ data = dict(
         ignore_index=ignore_index,
     ),
 
-    # ── test ─────────────────────────────────────────────────────────────────
+    # val PRECISELY
     test=dict(
         type=dataset_type,
-        split="test",
+        split=val_split,
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
