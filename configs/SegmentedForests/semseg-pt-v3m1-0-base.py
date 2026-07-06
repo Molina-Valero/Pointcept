@@ -155,6 +155,7 @@ data = dict(
                 return_grid_coord=True,
                 return_inverse=True,
             ),
+            dict(type="SphereCrop", point_max=800000, mode="center"), # Añadido
             dict(type="CenterShift", apply_z=False),
             dict(type="ToTensor"),
             dict(
