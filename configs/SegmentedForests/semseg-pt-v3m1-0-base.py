@@ -142,7 +142,7 @@ data = dict(
     val=dict(
         type=dataset_type,
         # split="val",
-        split=("plot_01", "plot_03", "plot_07"),
+        split=("plot_07"),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
@@ -171,7 +171,7 @@ data = dict(
     test=dict(
         type=dataset_type,
         # split="test",
-        split=("plot_01", "plot_03", "plot_07"),
+        split=("plot_07"),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
