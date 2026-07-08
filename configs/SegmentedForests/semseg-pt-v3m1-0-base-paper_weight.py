@@ -14,18 +14,6 @@ num_classes  = 5
 ignore_index = -1
 names = ["shrub", "ground", "crown", "stem", "dead_downwood"]
 
-train_split = "train"
-val_split   = "val"
-test_split  = "test"
-
-# Plot names that make up the train split — used only as a fallback when
-# computing class weights on a disk layout that stores plots at the top level
-# (as in semseg-pt-v3m1-0-base_weight.py) instead of under a "train/" folder.
-_train_plots = (
-    "plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09",
-    "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15",
-)
-
 # ── class weights from the TRAIN split ───────────────────────────────────────
 # The paper applies a wCE-Lovász loss to PTv3 (weighted Cross-Entropy combined
 # with Lovász). Weights are computed once from the training labels and cached
@@ -145,7 +133,7 @@ model = dict(
 # Quick sanity-check run at 100 epochs before committing to the full 3,000-epoch
 # schedule used in the paper. For the paper run set: epoch = 3000
 epoch      = 100
-eval_epoch = 10         # evaluate val every N epochs
+eval_epoch = 100         # evaluate val every N epochs
 
 optimizer = dict(type="AdamW", lr=0.0001, weight_decay=0.05)
 scheduler = dict(
@@ -163,7 +151,7 @@ data = dict(
     # ── train ────────────────────────────────────────────────────────────────
     train=dict(
         type=dataset_type,
-        split=train_split,
+        split= c("plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09", "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15"),
         data_root=data_root,
         transform=[
             # Centre each scene vertically
@@ -215,7 +203,7 @@ data = dict(
     # ── val ──────────────────────────────────────────────────────────────────
     val=dict(
         type=dataset_type,
-        split=val_split,
+        split=c("plot_01_val", "plot_03_val", "plot_07_val"),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
@@ -243,7 +231,7 @@ data = dict(
     # ── test ─────────────────────────────────────────────────────────────────
     test=dict(
         type=dataset_type,
-        split=test_split,
+        split=c("plot_01_val", "plot_03_val", "plot_07_val"),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
