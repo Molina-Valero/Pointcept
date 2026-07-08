@@ -89,7 +89,7 @@ data = dict(
     train=dict(
         type=dataset_type,
         # split="train",
-        split=("plot_02", "plot_03", "plot_04", "plot_05", "plot_06", "plot_07"),
+        split=("plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09", "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15"),
         data_root=data_root,
         transform=[
             # Centre each scene vertically
@@ -142,7 +142,7 @@ data = dict(
     val=dict(
         type=dataset_type,
         # split="val",
-        split=("plot_01_val", "plot_03_val", "plot_07_val",),
+        split=("plot_01_val", "plot_03_val", "plot_07_val"),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
@@ -171,7 +171,7 @@ data = dict(
     test=dict(
         type=dataset_type,
         # split="test",
-        split=("plot_01_val", "plot_03_val", "plot_07_val"),),
+        split=("plot_01_val", "plot_03_val", "plot_07_val"),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
