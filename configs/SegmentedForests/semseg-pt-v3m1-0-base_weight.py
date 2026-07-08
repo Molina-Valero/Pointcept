@@ -24,7 +24,8 @@ train_split = (
     "plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09",
     "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15",
 )
-val_split = ("plot_01", "plot_03", "plot_07")
+# NOTE: matches base.py — the val plots carry a "_val" suffix on disk
+val_split = ("plot_01_val", "plot_03_val", "plot_07_val")
 
 # ---------------------------------------------------------------------------
 # class weights from the TRAIN split.
@@ -127,7 +128,7 @@ model = dict(
 
 # scheduler settings
 epoch      = 25
-# eval_epoch = 200         # evaluate val PRECISELY every N epochs
+eval_epoch = 25            # matches base.py
 
 optimizer = dict(type="AdamW", lr=0.006, weight_decay=0.05)
 scheduler = dict(
