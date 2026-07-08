@@ -1,9 +1,5 @@
 _base_ = ["../_base_/default_runtime.py"]
 
-import os
-import glob
-import numpy as np
-
 # misc custom setting
 batch_size = 12        # total bs across all GPUs
 num_worker = 24
@@ -35,6 +31,12 @@ val_split = ("plot_01_val", "plot_03_val", "plot_07_val")
 #   scheme: "sqrt_inv" (gentle, recommended) | "inv" | "enet"
 # ---------------------------------------------------------------------------
 def _compute_class_weights(scheme="sqrt_inv", cache=True):
+    # imports are local on purpose: Pointcept's Config deepcopies every
+    # module-level name in this file, and module objects can't be copied
+    import os
+    import glob
+    import numpy as np
+
     cache_path = os.path.join(data_root, f"class_weights_{scheme}.npy")
     if cache and os.path.isfile(cache_path):
         return np.load(cache_path).astype(np.float32).tolist()
@@ -71,10 +73,11 @@ def _compute_class_weights(scheme="sqrt_inv", cache=True):
 
     if cache:
         np.save(cache_path, w)
-    return w.tolist()
+    return [float(x) for x in w]  # plain Python floats, safe to deepcopy/dump
 
 
 class_weight = _compute_class_weights(scheme="sqrt_inv")
+del _compute_class_weights  # keep the config namespace clean of callables
 
 # model settings
 model = dict(
