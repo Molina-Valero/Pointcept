@@ -142,7 +142,7 @@ data = dict(
     val=dict(
         type=dataset_type,
         # split="val",
-        split=("plot_01",),
+        split=("plot_01_val", "plot_03_val", "plot_07_val",),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
@@ -155,7 +155,7 @@ data = dict(
                 return_grid_coord=True,
                 return_inverse=True,
             ),
-            dict(type="SphereCrop", point_max=400000, mode="center"), # Añadido
+            # dict(type="SphereCrop", point_max=400000, mode="center"), # Añadido
             dict(type="CenterShift", apply_z=False),
             dict(type="ToTensor"),
             dict(
@@ -172,7 +172,7 @@ data = dict(
     test=dict(
         type=dataset_type,
         # split="test",
-        split=("plot_01",),
+        split=("plot_01_val", "plot_03_val", "plot_07_val"),),
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
