@@ -1,0 +1,56 @@
+#!/bin/bash
+#PBS -N SegmentedForests
+#PBS -l select=1:ncpus=16:mem=512gb:ngpus=4:gpu_mem=40gb:gpu_cap=compute_80
+#PBS -l walltime=48:00:00
+#PBS -j oe
+#PBS -m ae
+
+# Load CUDA 11.8 (required for CUDA extensions compiled during env creation)
+module add cuda/11.8
+# Load mambaforge
+module add mambaforge
+
+# Activate env by full path
+ENV_PREFIX=/storage/brno2/home/molina_valero/envs/pointcept
+source activate $ENV_PREFIX
+
+# Full path to the Python binary inside the env
+PYTHON=$ENV_PREFIX/bin/python
+
+# Ensure env site-packages always wins, even after train.sh sets PYTHONPATH
+export PYTHONPATH=$ENV_PREFIX/lib/python3.8/site-packages:$PYTHONPATH
+
+# Redirect temp files to scratch to avoid quota issues
+export TMPDIR=$SCRATCHDIR
+export PIP_CACHE_DIR=$SCRATCHDIR/pip_cache
+
+# --- wandb: OFFLINE mode ---------------------------------------------------
+# Logs runs locally (no internet/auth needed on compute nodes).
+# After the job finishes, sync from a login node with:
+#   wandb login                # one time only
+#   wandb sync --sync-all      # run from the Pointcept project dir
+export WANDB_MODE=offline
+# Keep wandb files on persistent storage (NOT scratch, which is wiped),
+# otherwise offline runs would be deleted by clean_scratch before you can sync.
+export WANDB_DIR=/storage/brno2/home/molina_valero/Pointcept/wandb_logs
+mkdir -p $WANDB_DIR
+# ---------------------------------------------------------------------------
+
+# Go to project directory
+cd /storage/brno2/home/molina_valero/Pointcept || exit 1
+
+# Quick sanity check
+echo "=== Environment check ==="
+echo "Node: $(hostname)"
+echo "GPUs: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader)"
+echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
+echo "Python: $PYTHON"
+$PYTHON -c "import torch; print('PyTorch:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('GPU count:', torch.cuda.device_count())"
+$PYTHON -c "import addict, yapf, termcolor, tensorboard, wandb; print('core deps OK')"
+echo "========================="
+
+# Run training
+bash scripts/train.sh -p $PYTHON -g 4 -d SegmentedForests -c semseg-pt-v3m1-0-base_weight -n semseg-pt-v3m1-0-base_weight
+
+# Clean scratch (required by MetaCentrum policy)
+clean_scratch
