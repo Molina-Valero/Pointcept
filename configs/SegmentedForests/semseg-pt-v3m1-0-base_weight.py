@@ -130,8 +130,8 @@ model = dict(
 )
 
 # scheduler settings
-epoch      = 25
-eval_epoch = 25            # matches base.py
+epoch      = 1000
+eval_epoch = 1000            # matches base.py
 
 optimizer = dict(type="AdamW", lr=0.006, weight_decay=0.05)
 scheduler = dict(
