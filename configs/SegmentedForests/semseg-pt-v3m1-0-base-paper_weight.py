@@ -132,8 +132,8 @@ model = dict(
 # ── scheduler ────────────────────────────────────────────────────────────────
 # Quick sanity-check run at 100 epochs before committing to the full 3,000-epoch
 # schedule used in the paper. For the paper run set: epoch = 3000
-epoch      = 100
-eval_epoch = 100         # evaluate val every N epochs
+epoch      = 1000
+eval_epoch = 1000         # evaluate val every N epochs
 
 optimizer = dict(type="AdamW", lr=0.0001, weight_decay=0.05)
 scheduler = dict(
