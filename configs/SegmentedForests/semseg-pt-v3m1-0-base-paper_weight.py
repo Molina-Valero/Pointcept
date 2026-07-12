@@ -1,18 +1,28 @@
 _base_ = ["../_base_/default_runtime.py"]
 
-# ── misc ─────────────────────────────────────────────────────────────────────
-batch_size = 2          # paper default for PTv3
-num_worker = 8
-mix_prob   = 0.8        # MixUp3D probability
+# misc custom setting
+batch_size = 12        # total bs across all GPUs
+num_worker = 24
+mix_prob   = 0.8
 empty_cache = False
 enable_amp  = True
 
-# ── shared constants (single source of truth for the rest of the file) ──────
+# ---------------------------------------------------------------------------
+# shared constants (single source of truth for the rest of the file)
+# ---------------------------------------------------------------------------
 dataset_type = "SegmentedForestsDataset"
-data_root    = "data/SegmentedForests"    # symlink: ln -s /your/processed/path data/SegmentedForests
+data_root    = "data/SegmentedForests"
 num_classes  = 5
 ignore_index = -1
 names = ["shrub", "ground", "crown", "stem", "dead_downwood"]
+
+train_split = (
+    "plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09",
+    "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15",
+)
+# NOTE: matches base.py — the val plots carry a "_val" suffix on disk
+val_split = ("plot_01_val", "plot_03_val", "plot_07_val")
+
 
 # ── class weights from the TRAIN split ───────────────────────────────────────
 # The paper applies a wCE-Lovász loss to PTv3 (weighted Cross-Entropy combined
@@ -151,7 +161,7 @@ data = dict(
     # ── train ────────────────────────────────────────────────────────────────
     train=dict(
         type=dataset_type,
-        split= c("plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09", "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15"),
+        split=train_split,
         data_root=data_root,
         transform=[
             # Centre each scene vertically
@@ -203,7 +213,7 @@ data = dict(
     # ── val ──────────────────────────────────────────────────────────────────
     val=dict(
         type=dataset_type,
-        split=c("plot_01_val", "plot_03_val", "plot_07_val"),
+        split=val_split,
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
@@ -231,7 +241,7 @@ data = dict(
     # ── test ─────────────────────────────────────────────────────────────────
     test=dict(
         type=dataset_type,
-        split=c("plot_01_val", "plot_03_val", "plot_07_val"),
+        split=val_split,
         data_root=data_root,
         transform=[
             dict(type="CenterShift", apply_z=True),
