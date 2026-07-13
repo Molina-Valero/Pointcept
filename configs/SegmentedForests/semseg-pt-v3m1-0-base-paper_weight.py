@@ -146,11 +146,14 @@ epoch      = 1000
 eval_epoch = 1000         # evaluate val every N epochs
 
 optimizer = dict(type="AdamW", lr=0.0001, weight_decay=0.05)
+
 scheduler = dict(
     type="CosineAnnealingLR",
-    eta_min=0.0,
+    total_steps=None,  # Pointcept fills this from epochs × steps
+    eta_min=0.0,       # paper doesn't specify; 0 or lr/100 are common
 )
-param_dicts = None
+
+param_dicts = None  # drop the "block" group — paper uses a single LR
 
 # ── dataset ──────────────────────────────────────────────────────────────────
 data = dict(
