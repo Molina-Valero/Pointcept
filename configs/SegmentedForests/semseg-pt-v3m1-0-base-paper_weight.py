@@ -41,28 +41,20 @@ def _compute_class_weights(scheme="sqrt_inv", cache=True):
     if cache and os.path.isfile(cache_path):
         return np.load(cache_path).astype(np.float32).tolist()
 
-    files = []
-    # primary layout: data_root/train/<plot>/segment.npy
-    for pat in (
-        os.path.join(data_root, train_split, "segment.npy"),
-        os.path.join(data_root, train_split, "**", "segment.npy"),
-    ):
-        files.extend(glob.glob(pat, recursive=True))
-    # fallback layout: plots at the top level of data_root
-    if not files:
-        for plot in _train_plots:
-            for pat in (
-                os.path.join(data_root, plot, "segment.npy"),
-                os.path.join(data_root, plot, "**", "segment.npy"),
-                os.path.join(data_root, "**", plot, "**", "segment.npy"),
-            ):
-                files.extend(glob.glob(pat, recursive=True))
-
     counts = np.zeros(num_classes, dtype=np.int64)
-    for f in sorted(set(files)):
-        seg = np.load(f).reshape(-1).astype(np.int64)
-        seg = seg[(seg >= 0) & (seg < num_classes)]  # drop ignore/stray labels
-        counts += np.bincount(seg, minlength=num_classes)[:num_classes]
+    for plot in train_split:
+        files = []
+        # adjust these globs if your on-disk layout differs
+        for pat in (
+            os.path.join(data_root, plot, "segment.npy"),
+            os.path.join(data_root, plot, "**", "segment.npy"),
+            os.path.join(data_root, "**", plot, "**", "segment.npy"),
+        ):
+            files.extend(glob.glob(pat, recursive=True))
+        for f in sorted(set(files)):
+            seg = np.load(f).reshape(-1).astype(np.int64)
+            seg = seg[(seg >= 0) & (seg < num_classes)]  # drop ignore/stray labels
+            counts += np.bincount(seg, minlength=num_classes)[:num_classes]
 
     if counts.sum() == 0:
         # data not found -> don't crash test/inference launches
@@ -139,8 +131,6 @@ model = dict(
 )
 
 # ── scheduler ────────────────────────────────────────────────────────────────
-# Quick sanity-check run at 100 epochs before committing to the full 3,000-epoch
-# schedule used in the paper. For the paper run set: epoch = 3000
 epoch      = 1000
 eval_epoch = 1000         # evaluate val every N epochs
 
