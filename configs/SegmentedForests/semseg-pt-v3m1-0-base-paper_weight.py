@@ -21,8 +21,8 @@ train_split = (
     "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15",
 )
 # NOTE: matches base.py — the val plots carry a "_val" suffix on disk
-val_split = ("plot_01_val", "plot_03_val", "plot_07_val")
-
+# val_split = ("plot_01_val", "plot_03_val", "plot_07_val")
+val_split = ("plot_01_val", "plot_03_val")
 
 # ── class weights from the TRAIN split ───────────────────────────────────────
 # The paper applies a wCE-Lovász loss to PTv3 (weighted Cross-Entropy combined
