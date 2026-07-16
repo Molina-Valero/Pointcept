@@ -118,6 +118,7 @@ model = dict(
         pdnorm_affine=True,
         pdnorm_conditions=("Forest",),
     ),
+    # wCE-Lovász
     criteria=[
         dict(
             type="CrossEntropyLoss",
