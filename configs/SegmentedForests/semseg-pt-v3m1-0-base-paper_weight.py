@@ -21,8 +21,7 @@ train_split = (
     "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15",
 )
 # NOTE: matches base.py — the val plots carry a "_val" suffix on disk
-# val_split = ("plot_01_val", "plot_03_val", "plot_07_val",)
-# val_split = ("plot_01_val", "plot_03_val",)
+val_split = ("plot_01_val", "plot_03_val", "plot_07_val")
 
 # ── class weights from the TRAIN split ───────────────────────────────────────
 # The paper applies a wCE-Lovász loss to PTv3 (weighted Cross-Entropy combined
@@ -98,14 +97,14 @@ model = dict(
         in_channels=6,              # XYZ coord (3) + normal (3)
         order=("z", "z-trans", "hilbert", "hilbert-trans"),
         stride=(2, 2, 2, 2),
-        enc_depths=(2, 2, 2, 8, 2),
+        enc_depths=(2, 2, 2, 6, 2),
         enc_channels=(32, 64, 128, 256, 512),
         enc_num_head=(2, 4, 8, 16, 32),
-        enc_patch_size=(32, 32, 32, 32, 32),
+        enc_patch_size=(1024, 1024, 1024, 1024, 1024),
         dec_depths=(2, 2, 2, 2),
         dec_channels=(64, 64, 128, 256),
         dec_num_head=(4, 4, 8, 16),
-        dec_patch_size=(32, 32, 32, 32),
+        dec_patch_size=(1024, 1024, 1024, 1024),
         mlp_ratio=4,
         qkv_bias=True,
         qk_scale=None,
