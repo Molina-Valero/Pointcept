@@ -76,7 +76,7 @@ def _compute_class_weights(scheme="sqrt_inv", cache=True):
     return [float(x) for x in w]  # plain Python floats, safe to deepcopy/dump
 
 
-class_weight = _compute_class_weights(scheme="sqrt_inv")
+class_weight = _compute_class_weights(scheme="inv")
 del _compute_class_weights  # keep the config namespace clean of callables
 
 # ── model ────────────────────────────────────────────────────────────────────
