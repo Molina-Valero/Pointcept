@@ -307,9 +307,14 @@ def build_inference_config(exp_dir, out_path, tester_data_root, scenes,
         "# ==== appended by run_inference.py (inference overrides) ====",
         f"data['test']['data_root'] = {tester_data_root!r}",
         f"data['test']['split'] = {tuple(scenes)!r}",
-        # correct Pointcept option names
+        # NOTE: Pointcept's default_setup() RECOMPUTES the *_per_gpu values
+        # from these top-level keys (num_worker_per_gpu = num_worker //
+        # world_size), so overriding num_worker_per_gpu here has no effect.
+        # Set the top-level keys instead.
+        "batch_size_test = 1",
+        "num_worker = 0",   # 0 -> load in the main process, no /dev/shm traffic
+        "num_worker_per_gpu = 0",
         "batch_size_test_per_gpu = 1",
-        "num_worker_per_gpu = 2",
         # lower GPU memory: mixed precision + periodic cache clearing
         "enable_amp = True",
         "empty_cache = True",
