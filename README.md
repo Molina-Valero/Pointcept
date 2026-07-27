@@ -219,12 +219,12 @@ If you find _Pointcept_ useful to your research, please cite our work as encoura
   pip install open3d
   ```
 ## Segmented forests
-# PTv3 Inference — `run_inference.py`
+### PTv3 Inference — `run_inference.py`
 
 Memory-safe (tiled) inference for large forest point clouds using a trained
 Pointcept PTv3 semantic segmentation model.
 
-## What it does
+#### What it does
 
 Large plots (millions of points) can exceed GPU/RAM if pushed through the
 model whole. This script:
@@ -241,7 +241,7 @@ model whole. This script:
 
 Classes: `0 shrub | 1 ground | 2 crown | 3 stem | 4 dead_downwood`
 
-## Requirements
+#### Requirements
 
 - A trained Pointcept experiment folder containing:
   - `config.py` (the training config)
@@ -250,11 +250,11 @@ Classes: `0 shrub | 1 ground | 2 crown | 3 stem | 4 dead_downwood`
   Optional: `laspy` for `.las`/`.laz` input, `plyfile` for faster `.ply` reads
   (falls back to a built-in parser if not installed).
 
-## Basic usage
+#### Basic usage
 
 ```bash
-cd /home/juan/Pointcept
-python run_inference.py --raw_dir /home/juan/data/pruebas
+cd /home/.../Pointcept
+python run_inference.py --raw_dir /home/...
 ```
 
 Supported raw input formats: `.txt .xyz .csv .pts .ply .las .laz`
@@ -262,13 +262,13 @@ Supported raw input formats: `.txt .xyz .csv .pts .ply .las .laz`
 If it runs out of memory, shrink the tiles and disable TTA:
 
 ```bash
-python run_inference.py --raw_dir /home/juan/data/pruebas \
+python run_inference.py --raw_dir /home/... \
     --max_points_per_tile 1000000 --no_tta
 ```
 
 Run `python run_inference.py --help` for the full option list.
 
-## Key options
+#### Key options
 
 | Flag | Default | Purpose |
 |---|---|---|
@@ -290,7 +290,7 @@ Run `python run_inference.py --help` for the full option list.
 | `--skip_preprocess` | off | Reuse existing tiles in `data_root/split/` |
 | `--skip_infer` | off | Reuse existing predictions in `save_path/result/` |
 
-## Evaluating against ground truth
+#### Evaluating against ground truth
 
 If your raw files include a label column:
 
@@ -303,7 +303,7 @@ Ground truth is stashed once per plot at preprocessing time and compared to
 merged predictions after export. Results print to console and are written to
 `metrics.json` (or `--metrics_path`).
 
-## Outputs
+#### Outputs
 
 In `--save_path`:
 
@@ -315,7 +315,7 @@ In `--save_path`:
 - `result/` — raw per-tile predictions from `tools/test.py`
 - `inference_config.py` — the generated Pointcept test config (for reference/debugging)
 
-## Troubleshooting
+#### Troubleshooting
 
 - **CUDA OOM**: lower `--max_points_per_tile` (e.g. `700000` or less), add
   `--no_tta`, keep `--tiles_per_run 1`.
