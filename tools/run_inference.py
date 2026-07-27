@@ -44,6 +44,7 @@ Run `python run_inference.py --help` for all options.
 
 import argparse
 import glob
+import json
 import os
 import subprocess
 import sys
@@ -243,6 +244,7 @@ def preprocess(raw_dir, data_root, split, normal_radius, normal_max_nn,
     for path in raw_files:
         plot = os.path.splitext(os.path.basename(path))[0]
         xyz, labels = read_raw(path, label_col=label_col)
+        has_gt = labels is not None
 
         centroid = xyz.mean(axis=0)
         centroid[2] = 0.0
@@ -254,6 +256,12 @@ def preprocess(raw_dir, data_root, split, normal_radius, normal_max_nn,
             labels = np.zeros((coord.shape[0],), dtype=np.int16)
         else:
             labels = labels.astype(np.int16)
+
+        if has_gt:
+            # Stash full-resolution ground truth (original point order, pre-
+            # tiling) so export() can score the merged predictions against it
+            # later if --eval is requested. One file per plot, not per tile.
+            np.save(os.path.join(split_dir, f"{plot}__gt.npy"), labels)
 
         tsize = choose_tile_size(coord, max_points_per_tile, tile_size_opt)
         tiles = tile_indices(coord, tsize, overlap)
@@ -409,7 +417,66 @@ def plot_of(scene):
     return scene.split(TILE_SEP)[0]
 
 
-def export(data_root, split, save_path, scenes, write_txt=True):
+# =============================================================================
+# metrics (optional; only available for plots where --label_col supplied real
+# ground-truth labels at preprocessing time)
+# =============================================================================
+def confusion_matrix(gt, pred, num_classes):
+    idx = gt.astype(np.int64) * num_classes + pred.astype(np.int64)
+    cm = np.bincount(idx, minlength=num_classes * num_classes)
+    return cm.reshape(num_classes, num_classes)
+
+
+def metrics_from_confusion(cm, class_names):
+    n = cm.shape[0]
+    tp = np.diag(cm).astype(np.float64)
+    support = cm.sum(axis=1).astype(np.float64)      # gt count per class
+    pred_count = cm.sum(axis=0).astype(np.float64)   # predicted count per class
+    union = support + pred_count - tp
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        iou = np.where(union > 0, tp / union, np.nan)
+        precision = np.where(pred_count > 0, tp / pred_count, np.nan)
+        recall = np.where(support > 0, tp / support, np.nan)  # = per-class acc.
+        f1 = np.where((precision + recall) > 0,
+                      2 * precision * recall / (precision + recall), np.nan)
+
+    overall_acc = tp.sum() / max(cm.sum(), 1)
+    valid = support > 0
+    mean_iou = float(np.nanmean(iou[valid])) if valid.any() else float("nan")
+    mean_acc = float(np.nanmean(recall[valid])) if valid.any() else float("nan")
+
+    per_class = []
+    for c in range(n):
+        name = class_names[c] if c < len(class_names) else str(c)
+        per_class.append(dict(
+            class_id=c, class_name=name, support=int(support[c]),
+            iou=None if np.isnan(iou[c]) else float(iou[c]),
+            precision=None if np.isnan(precision[c]) else float(precision[c]),
+            recall=None if np.isnan(recall[c]) else float(recall[c]),
+            f1=None if np.isnan(f1[c]) else float(f1[c]),
+        ))
+    return dict(overall_accuracy=float(overall_acc), mean_accuracy=mean_acc,
+                mean_iou=mean_iou, per_class=per_class)
+
+
+def print_metrics(title, m):
+    fmt = lambda v: f"{v:6.3f}" if v is not None else "   n/a"
+    print(f"\n[eval] {title}")
+    print(f"  {'class':16s} {'support':>10s} {'IoU':>7s} {'Prec':>7s} "
+          f"{'Recall':>7s} {'F1':>7s}")
+    for c in m["per_class"]:
+        print(f"  {c['class_name']:16s} {c['support']:>10,d} "
+              f"{fmt(c['iou'])} {fmt(c['precision'])} "
+              f"{fmt(c['recall'])} {fmt(c['f1'])}")
+    print(f"  {'-' * 16} overall_acc={m['overall_accuracy']:.4f}  "
+          f"mAcc={m['mean_accuracy']:.4f}  mIoU={m['mean_iou']:.4f}")
+
+
+def export(data_root, split, save_path, scenes, write_txt=True,
+          eval_metrics=False, ignore_index=-1, class_names=None,
+          metrics_path=None):
+    class_names = class_names or CLASS_NAMES
     result_dir = os.path.join(save_path, "result")
     split_dir = os.path.join(data_root, split)
     if not os.path.isdir(result_dir):
@@ -419,6 +486,8 @@ def export(data_root, split, save_path, scenes, write_txt=True):
     plots = {}
     for s in scenes:
         plots.setdefault(plot_of(s), []).append(s)
+
+    all_cm, all_metrics = None, {}
 
     print(f"\n[export] merging tiles for {len(plots)} plot(s)")
     for plot, tile_scenes in sorted(plots.items()):
@@ -463,11 +532,23 @@ def export(data_root, split, save_path, scenes, write_txt=True):
             filled += core_orig.shape[0]
 
         missing = int((full_pred < 0).sum())
+        keep = full_pred >= 0
+
+        gt_full = None
+        if eval_metrics:
+            gt_path = os.path.join(split_dir, f"{plot}__gt.npy")
+            if os.path.isfile(gt_path):
+                gt_full = np.load(gt_path).astype(np.int64)
+            else:
+                print(f"  WARNING: {plot}: --eval requested but no ground "
+                      f"truth found (use --label_col when preprocessing)")
+
         if missing:
             print(f"  WARNING: {plot}: {missing:,} points unpredicted "
                   f"(missing tiles?)")
-            keep = full_pred >= 0
             full_coord, full_pred = full_coord[keep], full_pred[keep]
+            if gt_full is not None:
+                gt_full = gt_full[keep]
 
         rgb = palette(int(full_pred.max()) + 1)[full_pred]
         ply = os.path.join(save_path, f"{plot}_pred.ply")
@@ -482,6 +563,37 @@ def export(data_root, split, save_path, scenes, write_txt=True):
             np.savetxt(txt,
                        np.column_stack([full_coord, full_pred.astype(np.float64)]),
                        fmt=["%.4f", "%.4f", "%.4f", "%d"])
+
+        if gt_full is not None:
+            valid = gt_full != ignore_index
+            n_ignored = int((~valid).sum())
+            if n_ignored:
+                print(f"  [eval] {plot}: ignoring {n_ignored:,} point(s) "
+                      f"with label == {ignore_index}")
+            gt_valid, pred_valid = gt_full[valid], full_pred[valid]
+            if gt_valid.size:
+                nc = int(max(gt_valid.max(), pred_valid.max(),
+                             len(class_names) - 1) + 1)
+                cm = confusion_matrix(gt_valid, pred_valid, nc)
+                all_cm = cm if all_cm is None else all_cm + cm
+                plot_metrics = metrics_from_confusion(cm, class_names)
+                print_metrics(plot, plot_metrics)
+                all_metrics[plot] = plot_metrics
+            else:
+                print(f"  [eval] {plot}: no valid labeled points to score")
+
+    if eval_metrics and all_cm is not None:
+        overall = metrics_from_confusion(all_cm, class_names)
+        print_metrics("OVERALL (all plots combined)", overall)
+        all_metrics["__overall__"] = overall
+        out = metrics_path or os.path.join(save_path, "metrics.json")
+        with open(out, "w") as f:
+            json.dump(all_metrics, f, indent=2)
+        print(f"\n[eval] metrics written to {out}")
+    elif eval_metrics:
+        print("\n[eval] --eval was set but no plot had ground-truth labels "
+              "(use --label_col at preprocessing time).")
+
     print("[export] done.")
 
 
@@ -521,6 +633,17 @@ def parse_args():
     p.add_argument("--skip_preprocess", action="store_true")
     p.add_argument("--skip_infer", action="store_true")
     p.add_argument("--no_txt", action="store_true")
+    p.add_argument("--eval", action="store_true",
+                   help="Compute accuracy/precision/recall/F1/IoU metrics by "
+                        "comparing merged predictions against ground-truth "
+                        "labels. Requires --label_col to have been set when "
+                        "the clouds were preprocessed (labelled raw files).")
+    p.add_argument("--ignore_index", type=int, default=-1,
+                   help="Ground-truth label value to exclude from metrics "
+                        "(e.g. unlabeled/unknown points).")
+    p.add_argument("--metrics_path", default=None,
+                   help="Where to write metrics.json (default: "
+                        "<save_path>/metrics.json).")
     return p.parse_args()
 
 
@@ -548,7 +671,15 @@ def main():
     else:
         print("[infer] skipped by request.")
 
-    export(a.data_root, a.split, a.save_path, scenes, write_txt=not a.no_txt)
+    if a.eval and a.label_col is None and not a.skip_preprocess:
+        print("[warn] --eval was set but --label_col was not; no ground "
+              "truth will be available to score against unless the tile "
+              "split already contains '<plot>__gt.npy' files from a prior "
+              "labelled run.")
+
+    export(a.data_root, a.split, a.save_path, scenes, write_txt=not a.no_txt,
+          eval_metrics=a.eval, ignore_index=a.ignore_index,
+          class_names=CLASS_NAMES, metrics_path=a.metrics_path)
     print(f"\nAll done. Outputs in: {a.save_path}")
 
 
