@@ -50,7 +50,7 @@ IGNORE_LABEL = -1   # label value that will be masked during training
 
 
 def estimate_normals(xyz: np.ndarray,
-                     radius: float = 0.3,
+                     radius: float = 0.2,
                      max_nn: int = 30) -> np.ndarray:
     """Estimate per-point normals using Open3D KD-tree search."""
     pcd = o3d.geometry.PointCloud()
@@ -123,7 +123,7 @@ def main():
                         help="Folder containing the .txt plot files (flat, no split subdirs)")
     parser.add_argument("--output_root",  required=True,
                         help="Where to write processed per-plot folders")
-    parser.add_argument("--normal_radius", type=float, default=0.3,
+    parser.add_argument("--normal_radius", type=float, default=0.2,
                         help="KD-tree search radius for normal estimation (metres)")
     parser.add_argument("--normal_max_nn", type=int,   default=30,
                         help="Max neighbours for normal estimation")
