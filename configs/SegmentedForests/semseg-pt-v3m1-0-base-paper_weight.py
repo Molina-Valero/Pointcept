@@ -17,11 +17,11 @@ ignore_index = -1
 names = ["shrub", "ground", "crown", "stem", "dead_downwood"]
 
 train_split = (
-    "plot_02", "plot_04", "plot_05", "plot_06", "plot_08", "plot_09",
+    "plot_02", "plot_04", "plot_05", "plot_06", "plot_07", "plot_08",
     "plot_10", "plot_11", "plot_12", "plot_13", "plot_14", "plot_15",
 )
 # NOTE: matches base.py — the val plots carry a "_val" suffix on disk
-val_split = ("plot_01_val", "plot_03_val")
+val_split = ("plot_01_test", "plot_03_val")
 
 # ── class weights from the TRAIN split ───────────────────────────────────────
 # The paper applies a wCE-Lovász loss to PTv3 (weighted Cross-Entropy combined
