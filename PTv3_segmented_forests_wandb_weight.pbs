@@ -1,14 +1,19 @@
 #!/bin/bash
 #PBS -N SegmentedForests_inv
-#PBS -l select=1:ncpus=16:mem=256gb:ngpus=4:gpu_mem=40gb:gpu_cap="sm_80,sm_90":scratch_local=100gb
+#PBS -l select=1:ncpus=16:mem=256gb:ngpus=4:gpu_mem=40gb:gpu_cap=sm_80:scratch_local=100gb
 #PBS -l walltime=48:00:00
 #PBS -j oe
 #PBS -m ae
 
-# NOTE on gpu_cap: "sm_80" matches 8.0-8.9 (A100, A40, L40, RTX A6000, ...),
-# "sm_90" matches 9.0-9.x (H100). The comma is an OR.
+# NOTE on gpu_cap: sm_80 matches 8.0-8.9 -- A100, A40, L40, RTX A6000, etc.
 # Do NOT use compute_80 -- that means "8.0 and higher" and will happily
 # schedule you onto sm_120 Blackwell cards, which PyTorch 2.1.0 cannot use.
+# A comma-separated OR list (e.g. "sm_80,sm_90") does NOT work in a #PBS
+# directive: the parser splits on the comma. To include Hopper as well,
+# override on the command line instead:
+#   qsub -l 'select=1:ncpus=16:mem=256gb:ngpus=4:gpu_mem=40gb:gpu_cap="sm_80,sm_90":scratch_local=100gb' \
+#        PTv3_segmented_forests_wandb_weight.pbs
+# (a command-line -l overrides the directive of the same resource)
 
 # Load CUDA 11.8 (required for CUDA extensions compiled during env creation).
 # The module tree was renamed; try the new name first, fall back, and don't
