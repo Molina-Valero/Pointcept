@@ -1,12 +1,21 @@
 #!/bin/bash
 #PBS -N SegmentedForests_inv
-#PBS -l select=1:ncpus=16:mem=512gb:ngpus=4:gpu_mem=40gb:gpu_cap=compute_80
+#PBS -l select=1:ncpus=16:mem=256gb:ngpus=4:gpu_mem=40gb:gpu_cap="sm_80,sm_90":scratch_local=100gb
 #PBS -l walltime=48:00:00
 #PBS -j oe
 #PBS -m ae
 
-# Load CUDA 11.8 (required for CUDA extensions compiled during env creation)
-module add cuda/11.8
+# NOTE on gpu_cap: "sm_80" matches 8.0-8.9 (A100, A40, L40, RTX A6000, ...),
+# "sm_90" matches 9.0-9.x (H100). The comma is an OR.
+# Do NOT use compute_80 -- that means "8.0 and higher" and will happily
+# schedule you onto sm_120 Blackwell cards, which PyTorch 2.1.0 cannot use.
+
+# Load CUDA 11.8 (required for CUDA extensions compiled during env creation).
+# The module tree was renamed; try the new name first, fall back, and don't
+# abort the job if neither exists (conda PyTorch ships its own CUDA runtime).
+module add cuda/11.8 2>/dev/null || module add CUDA/11.8.0 2>/dev/null || \
+  echo "WARNING: no cuda module loaded, relying on conda-bundled runtime"
+
 # Load mambaforge
 module add mambaforge
 
@@ -45,13 +54,40 @@ echo "Node: $(hostname)"
 echo "GPUs: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader)"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 echo "Python: $PYTHON"
+echo "SCRATCHDIR: $SCRATCHDIR"
 $PYTHON -c "import torch; print('PyTorch:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('GPU count:', torch.cuda.device_count())"
 $PYTHON -c "import addict, yapf, termcolor, tensorboard, wandb; print('core deps OK')"
+
+# --- Architecture guard ----------------------------------------------------
+# torch.cuda.is_available() returns True even on an unsupported card; the
+# failure only shows up later as a cryptic NCCL "named symbol not found".
+# Fail loudly here instead.
+$PYTHON - <<'PYEOF' || { echo "FATAL: GPU architecture unsupported by this PyTorch build"; clean_scratch; exit 1; }
+import sys, torch
+arch_list = torch.cuda.get_arch_list()
+supported = {int(a.split('_')[1]) for a in arch_list if a.startswith('sm_')}
+ok = True
+for i in range(torch.cuda.device_count()):
+    major, minor = torch.cuda.get_device_capability(i)
+    cap = major * 10 + minor
+    name = torch.cuda.get_device_name(i)
+    if cap in supported or any(cap >= s and s // 10 == major for s in supported):
+        print(f"  GPU {i}: {name} sm_{cap} -- OK")
+    else:
+        print(f"  GPU {i}: {name} sm_{cap} -- NOT SUPPORTED (build has {sorted(supported)})")
+        ok = False
+sys.exit(0 if ok else 1)
+PYEOF
 echo "========================="
 
 # Run training
 # bash scripts/train.sh -p $PYTHON -g 4 -d SegmentedForests -c semseg-pt-v3m1-0-base_weight -n semseg-pt-v3m1-0-base_weight
 bash scripts/train.sh -p $PYTHON -g 4 -d SegmentedForests -c semseg-pt-v3m1-0-base-paper_weight -n semseg-pt-v3m1-0-base-paper_weight
+RC=$?
 
 # Clean scratch (required by MetaCentrum policy)
 clean_scratch
+
+# Propagate the real exit code so PBS reports failures instead of Exit_status=0
+echo "train.sh exited with code $RC"
+exit $RC
