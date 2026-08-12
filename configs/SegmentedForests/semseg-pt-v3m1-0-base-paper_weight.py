@@ -30,7 +30,7 @@ val_split = ("plot_01_test", "plot_03_val")
 # weights when the data isn't present (e.g. inference on a machine without the
 # dataset mounted) so the config never crashes.
 #   scheme: "sqrt_inv" (gentle, recommended) | "inv" | "enet"
-def _compute_class_weights(scheme="sqrt_inv", cache=True):
+def _compute_class_weights(scheme="inv", cache=True):
     # imports are local on purpose: Pointcept's Config deepcopies every
     # module-level name in this file, and module objects can't be copied
     import os
